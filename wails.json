@@ -1,0 +1,16 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "SimklExpoGter",
+  "outputfilename": "SimklExpoGter",
+  "frontend:install": "npm ci",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "preBuildHooks": {
+    "windows/*": "cmd /c if exist icon.ico copy /Y icon.ico build\\windows\\icon.ico"
+  },
+  "author": {
+    "name": "smyhlin",
+    "email": "myhlin.c@gmail.com"
+  }
+}

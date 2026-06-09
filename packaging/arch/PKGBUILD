@@ -1,0 +1,25 @@
+# Maintainer: smyhlin <myhlin.c@gmail.com>
+pkgname=simklexpogter
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Simkl backup/export desktop app with GUI, CLI and TUI modes'
+arch=('x86_64')
+url='https://github.com/smyhlin/SimklExpoGter'
+license=('MIT')
+depends=('gtk3' 'webkit2gtk-4.1' 'ca-certificates')
+makedepends=('go' 'nodejs' 'npm' 'wails' 'pkgconf')
+source=()
+sha256sums=()
+
+build() {
+  cd "$srcdir/.."
+  ./build.sh linux
+}
+
+package() {
+  cd "$srcdir/.."
+  install -Dm755 "dist/linux/SimklExpoGter" "$pkgdir/usr/bin/SimklExpoGter"
+  install -Dm644 "packaging/linux/SimklExpoGter.desktop" "$pkgdir/usr/share/applications/SimklExpoGter.desktop"
+  install -Dm644 "build/appicon.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/SimklExpoGter.png"
+  install -Dm644 "LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
