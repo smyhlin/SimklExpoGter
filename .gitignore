@@ -1,0 +1,99 @@
+# Build outputs
+/dist/
+/build/bin/
+/build/bin*
+/*.AppImage
+/*.deb
+/*.pkg.tar.zst
+
+# Frontend dependencies and caches
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/.vite/
+frontend/dist/.vite/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+# Go test/build outputs
+*.test
+*.out
+coverage.out
+coverage.html
+# Local build helper state
+.build/
+tmp/
+*.tmp
+# Local release/commit scratch files
+COMMIT_MESSAGE.md
+RELEASE_NOTES_*.md
+# Secrets and local app state
+settings.json
+*.secret
+*.token
+.env
+.env.*
+*.local
+# Exported backup data
+simkl-export-*.csv
+simkl-export-*.json
+SimklExpoGterBackups/
+exports/
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+# Wails / Go
+build/bin/
+frontend/wailsjs/
+vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# Frontend (Svelte / Node)
+node_modules/
+dist/
+frontend/dist/
+frontend/*.md5
+.pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+.stylelintcache
+.env.local
+.env.*.local
+.history/
+.pnpm-store/
+*.tsbuildinfo
+# Local exports / Temp
+/settings.json
+/wails-*.log
+.wails-scaffold/
+_scaffold/
+_scaffold.gitignore
+_scaffold.README.md
+# OS / Editor Noise
+*.log
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Bootstrap/build helper output
+*.AppImage
+*.deb
+*.pkg.tar.zst
+*.pkg.tar.zst.sig
+# Local build outputs
+# Frontend dependencies/build cache
+# Go build/test outputs
+# Local generated config/cache
+# External API reference dumps / local research files
+apiary.apib
+*apiary*.apib

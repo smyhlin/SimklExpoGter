@@ -1,0 +1,10 @@
+Package: simklexpogter
+Version: @VERSION@
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: smyhlin <myhlin.c@gmail.com>
+Depends: libgtk-3-0, libwebkit2gtk-4.1-0 | libwebkit2gtk-4.0-37, ca-certificates
+Description: SimklExpoGter Simkl backup/export desktop app
+ SimklExpoGter exports Simkl watch data to CSV/JSON and can run as a GUI,
+ CLI or TUI application.

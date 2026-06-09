@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=SimklExpoGter
+Comment=Backup and export Simkl watch history
+Exec=SimklExpoGter
+Icon=SimklExpoGter
+Terminal=false
+Categories=Utility;AudioVideo;Network;
+StartupNotify=true
