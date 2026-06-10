@@ -58,9 +58,11 @@ var menuItems = []menuItem{
 }
 
 type screenState struct {
-	output io.Writer
-	alt    bool
-	left   bool
+	output  io.Writer
+	ansi    bool
+	alt     bool
+	left    bool
+	restore func()
 }
 
 func run(service Service, input io.Reader, output io.Writer) error {
@@ -107,7 +109,7 @@ func run(service Service, input io.Reader, output io.Writer) error {
 			statusLine = item.title + " completed."
 		}
 
-		if err := waitForEnter(reader, output); err != nil {
+		if err := waitForEnter(reader, output, screen); err != nil {
 			return err
 		}
 	}
@@ -119,12 +121,16 @@ func newScreen(output io.Writer) *screenState {
 		return &screenState{output: output}
 	}
 	info, err := file.Stat()
-	if err != nil {
+	if err != nil || info.Mode()&os.ModeCharDevice == 0 {
 		return &screenState{output: output}
 	}
+
+	restore, ansi := setupTerminalOutput(file)
 	return &screenState{
-		output: output,
-		alt:    info.Mode()&os.ModeCharDevice != 0,
+		output:  output,
+		ansi:    ansi,
+		alt:     ansi,
+		restore: restore,
 	}
 }
 
@@ -137,11 +143,14 @@ func (s *screenState) enter() {
 }
 
 func (s *screenState) leave() {
-	if !s.alt || s.left {
-		return
+	if s.alt && !s.left {
+		fmt.Fprint(s.output, "\x1b[0m\x1b[?25h\x1b[?1049l")
+		s.left = true
 	}
-	fmt.Fprint(s.output, "\x1b[0m\x1b[?25h\x1b[?1049l")
-	s.left = true
+	if s.restore != nil {
+		s.restore()
+		s.restore = nil
+	}
 }
 
 func (s *screenState) clear() {
@@ -152,26 +161,45 @@ func (s *screenState) clear() {
 
 func (s *screenState) renderMenu(statusLine string) {
 	s.clear()
-	fmt.Fprintln(s.output, "\x1b[1mSimklExpoGter\x1b[0m  \x1b[2mTUI workspace · type number/name · q quits\x1b[0m")
+	fmt.Fprintf(s.output, "%s  %s\n", s.bold("SimklExpoGter"), s.dim("TUI workspace · type number/name · q quits"))
 	fmt.Fprintln(s.output, "──────────────────────────────────────────────────────────────────────────────")
 	fmt.Fprintln(s.output)
-	fmt.Fprintln(s.output, "\x1b[1mActions\x1b[0m")
+	fmt.Fprintln(s.output, s.bold("Actions"))
 	for _, item := range menuItems {
-		fmt.Fprintf(s.output, "  \x1b[36m%s\x1b[0m  %-28s \x1b[2m%s\x1b[0m\n", item.key, item.title, item.description)
+		fmt.Fprintf(s.output, "  %s  %-28s %s\n", s.cyan(item.key), item.title, s.dim(item.description))
 	}
 	fmt.Fprintln(s.output)
 	fmt.Fprintln(s.output, "──────────────────────────────────────────────────────────────────────────────")
 	if strings.TrimSpace(statusLine) != "" {
-		fmt.Fprintln(s.output, "\x1b[2m"+statusLine+"\x1b[0m")
+		fmt.Fprintln(s.output, s.dim(statusLine))
 	}
 	fmt.Fprintln(s.output)
 }
 
 func (s *screenState) renderAction(title string) {
 	s.clear()
-	fmt.Fprintf(s.output, "\x1b[1m%s\x1b[0m\n", title)
+	fmt.Fprintln(s.output, s.bold(title))
 	fmt.Fprintln(s.output, "──────────────────────────────────────────────────────────────────────────────")
 	fmt.Fprintln(s.output)
+}
+
+func (s *screenState) bold(value string) string {
+	return s.wrap(value, "1")
+}
+
+func (s *screenState) dim(value string) string {
+	return s.wrap(value, "2")
+}
+
+func (s *screenState) cyan(value string) string {
+	return s.wrap(value, "36")
+}
+
+func (s *screenState) wrap(value string, code string) string {
+	if !s.ansi {
+		return value
+	}
+	return "\x1b[" + code + "m" + value + "\x1b[0m"
 }
 
 func trapInterrupt(screen *screenState) func() {
@@ -233,9 +261,9 @@ func runMenuAction(key string, service Service, reader *bufio.Reader, output io.
 	}
 }
 
-func waitForEnter(reader *bufio.Reader, output io.Writer) error {
+func waitForEnter(reader *bufio.Reader, output io.Writer, screen *screenState) error {
 	fmt.Fprintln(output)
-	fmt.Fprint(output, "\x1b[2mPress Enter to return to the dashboard...\x1b[0m")
+	fmt.Fprint(output, screen.dim("Press Enter to return to the dashboard..."))
 	_, err := reader.ReadString('\n')
 	if err != nil {
 		return err

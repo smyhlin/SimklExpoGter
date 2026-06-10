@@ -48,3 +48,8 @@ Ctrl+C               quit and restore the terminal screen
 ```
 
 The TUI deliberately remains dependency-free and line-input compatible, so it works in plain SSH, tmux, serial consoles and minimal rescue shells.
+
+
+## Windows console rendering
+
+On Windows, the TUI enables console Virtual Terminal Processing before writing ANSI control sequences. If Windows refuses VT mode, the TUI falls back to plain text and does not use the alternate screen. This prevents raw escape text such as `[?1049h` or `[36m` from appearing in classic console hosts.

@@ -51,6 +51,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Fixed Windows TUI rendering raw ANSI escape sequences by enabling console virtual terminal processing and falling back to plain text when unavailable.
 - Fixed Simkl CLI/TUI auth failure caused by invalid OAuth redirect URI.
 - Fixed frontend/Wails type mismatch around schedule settings.
 - Fixed stale scheduler unit test expectations.

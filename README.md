@@ -270,6 +270,8 @@ TUI keys:
 - Esc: return to main menu
 - `q` or `Ctrl+C`: quit
 
+On Windows, the TUI enables console Virtual Terminal Processing automatically and falls back to plain text if the console does not support it.
+
 Current TUI abilities:
 
 - edit Simkl client ID, optional secret and export directory
