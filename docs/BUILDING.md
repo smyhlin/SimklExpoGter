@@ -86,6 +86,7 @@ Expected Linux-side release files:
 ```text
 SimklExpoGter-linux-gui-webkitgtk41-amd64-v0.1.0.tar.gz
 SimklExpoGter-linux-cli-amd64-v0.1.0.tar.gz
+SimklExpoGter-windows-gui-amd64-v0.1.0.zip
 SimklExpoGter-windows-cli-amd64-v0.1.0.zip
 SHA256SUMS.txt
 ```
@@ -107,6 +108,7 @@ build.bat release-windows
 Expected Windows-side release files:
 
 ```text
+SimklExpoGter-windows-gui-amd64-v0.1.0.zip
 SimklExpoGter-windows-gui-amd64-v0.1.0.zip
 SimklExpoGter-windows-cli-amd64-v0.1.0.zip
 SHA256SUMS-windows.txt

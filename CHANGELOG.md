@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Added Windows GUI release asset generation to the Linux release build flow.
 - Cross-platform app structure with GUI, CLI and TUI modes.
 - Linux GUI build support through Wails.
 - Linux CLI/TUI-only build support with `go build -tags cli`.
@@ -51,6 +52,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Fixed Windows TUI stair-step layout by keeping newline auto-return enabled while using VT escape processing.
 - Fixed Windows TUI rendering raw ANSI escape sequences by enabling console virtual terminal processing and falling back to plain text when unavailable.
 - Fixed Simkl CLI/TUI auth failure caused by invalid OAuth redirect URI.
 - Fixed frontend/Wails type mismatch around schedule settings.

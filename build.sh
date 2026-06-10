@@ -167,6 +167,18 @@ build_linux_cli() {
   chmod +x "$DIST_DIR/linux/${APP_NAME}-cli"
 }
 
+build_windows_gui() {
+  log "Building Windows GUI with Wails"
+  frontend_build
+  mkdir -p "$DIST_DIR/windows"
+
+  # Wails v2 Windows builds are Go/WebView2 based and can be targeted from
+  # non-Windows hosts. The produced .exe still must be tested on Windows.
+  wails_cmd build -clean -platform windows/amd64
+
+  install -Dm755 "build/bin/${APP_NAME}.exe" "$DIST_DIR/windows/${APP_NAME}.exe"
+}
+
 build_windows_cli() {
   log "Cross-building Windows CLI/TUI"
   ensure_frontend_dist
@@ -301,10 +313,12 @@ build_release_linux() {
 
   build_linux_gui
   build_linux_cli
+  build_windows_gui
   build_windows_cli
 
   archive_tar_gz "$DIST_DIR/linux" "$APP_NAME" "$release_dir/${APP_NAME}-linux-gui-${suffix}-amd64-v${VERSION}.tar.gz"
   archive_tar_gz "$DIST_DIR/linux" "${APP_NAME}-cli" "$release_dir/${APP_NAME}-linux-cli-amd64-v${VERSION}.tar.gz"
+  archive_zip "$release_dir/${APP_NAME}-windows-gui-amd64-v${VERSION}.zip" "$DIST_DIR/windows/${APP_NAME}.exe"
   archive_zip "$release_dir/${APP_NAME}-windows-cli-amd64-v${VERSION}.zip" "$DIST_DIR/windows/${APP_NAME}-cli.exe"
 
   if need_cmd dpkg-deb; then
@@ -337,11 +351,12 @@ Commands:
   frontend        Build frontend only
   linux           Build Linux GUI binary with Wails
   linux-cli       Build Linux CLI/TUI-only binary, no GUI/WebKit needed
+  windows         Cross-build Windows GUI binary with Wails
   windows-cli     Cross-build Windows CLI/TUI-only binary
   deb             Build Debian package
   appimage        Build AppDir/AppImage package
   arch            Build Arch package or prepare package tree
-  release-linux   Build Linux release assets and Windows CLI zip
+  release-linux   Build Linux + Windows release assets
   release         Alias for release-linux on Linux
   clean           Remove generated build outputs
 
@@ -358,6 +373,7 @@ case "${1:-help}" in
   frontend) frontend_build ;;
   linux|linux-gui) build_linux_gui ;;
   linux-cli) build_linux_cli ;;
+  windows|windows-gui) build_windows_gui ;;
   windows-cli) build_windows_cli ;;
   deb) build_deb ;;
   appimage) build_appimage ;;

@@ -11,7 +11,6 @@ import (
 const (
 	enableProcessedOutput           = 0x0001
 	enableVirtualTerminalProcessing = 0x0004
-	disableNewlineAutoReturn        = 0x0008
 )
 
 var (
@@ -32,7 +31,11 @@ func setupTerminalOutput(file *os.File) (func(), bool) {
 		return func() {}, false
 	}
 
-	nextMode := originalMode | enableProcessedOutput | enableVirtualTerminalProcessing | disableNewlineAutoReturn
+	// Do not set DISABLE_NEWLINE_AUTO_RETURN here.
+	// The TUI uses normal fmt.Fprintln calls. On Windows, disabling newline
+	// auto-return makes '\n' move down without returning to column 0, which
+	// turns the dashboard into a diagonal/stair-step layout.
+	nextMode := originalMode | enableProcessedOutput | enableVirtualTerminalProcessing
 	ok, _, _ = procSetConsoleMode.Call(uintptr(handle), uintptr(nextMode))
 	if ok == 0 {
 		return func() {}, false

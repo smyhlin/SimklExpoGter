@@ -157,3 +157,7 @@ build.bat release-windows
 ```
 
 Do not manually bypass `build.sh` for WebKitGTK tags. The script auto-detects WebKitGTK 4.1 and applies `webkit2_41`.
+
+## Automated release
+
+Tag pushes matching `v*` run `.github/workflows/release.yml`, which builds Linux assets on Ubuntu and Windows GUI/CLI assets on Windows, then uploads them to the GitHub release.

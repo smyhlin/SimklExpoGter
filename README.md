@@ -135,6 +135,10 @@ build.bat clean
 
 ## Release Builds
 
+Automated GitHub release builds are handled by `.github/workflows/release.yml` on tag pushes.
+
+
+
 Linux release assets:
 
 ```bash
@@ -145,7 +149,7 @@ This builds:
 
 - Linux GUI tarball
 - Linux CLI/TUI tarball
-- Windows CLI/TUI zip through Go cross-compilation
+- Windows GUI zip through Wails cross-build and Windows CLI/TUI zip through Go cross-compilation
 - `.deb` package when `dpkg-deb` is available
 - Arch package when `bsdtar` is available
 - `SHA256SUMS.txt`

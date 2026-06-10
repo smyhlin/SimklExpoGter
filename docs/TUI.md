@@ -53,3 +53,7 @@ The TUI deliberately remains dependency-free and line-input compatible, so it wo
 ## Windows console rendering
 
 On Windows, the TUI enables console Virtual Terminal Processing before writing ANSI control sequences. If Windows refuses VT mode, the TUI falls back to plain text and does not use the alternate screen. This prevents raw escape text such as `[?1049h` or `[36m` from appearing in classic console hosts.
+
+## Windows newline handling
+
+The Windows TUI enables Virtual Terminal Processing for ANSI styling and alternate-screen behavior, but intentionally keeps newline auto-return enabled. This keeps normal `\n` output aligned at column 0 and avoids diagonal/stair-step rendering in Windows Terminal and PowerShell.
