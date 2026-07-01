@@ -510,6 +510,28 @@ Persistence rules:
 - `frontend`: Svelte 5 + TypeScript desktop UI
 - `scripts`: bootstrap helpers
 - `packaging`: Linux desktop, AppImage, Debian and Arch packaging files
+- `AGENTS.md` and subtree `AGENTS.md` files: root and local agent contracts for this repo
+
+## Repository Guidance
+
+This repo uses a hierarchical `AGENTS.md` tree so the nearest instructions to a file describe the local contract.
+
+Why it exists:
+
+- keep durable rules close to the code they govern
+- keep cross-platform and service-layer behavior easy to audit
+- reduce stale assumptions during future edits
+
+How to use it:
+
+- read root `AGENTS.md` first
+- then read the nearest `AGENTS.md` for the files you will edit
+- update the owning `AGENTS.md` when a change affects a subtree’s rules, responsibilities, or verification
+
+What changed:
+
+- Root `AGENTS.md` now indexes child docs for build, docs, frontend, internal packages, packaging, scripts, and GitHub metadata.
+- Child docs define local contracts and verification for each subtree.
 
 ## Current Limits
 

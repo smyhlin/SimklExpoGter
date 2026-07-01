@@ -130,8 +130,8 @@ The app tries to enable user lingering automatically during schedule setup so ti
 For user-facing changes, update:
 
 - `CHANGELOG.md`
-- `` if release process changes
 - `README.md` if setup/usage changes
+- `.github/workflows/release.yml` if release process changes
 
 ## Style
 
@@ -139,7 +139,6 @@ For user-facing changes, update:
 - Prefer explicit examples over vague explanations.
 - Keep terminal commands copy-paste friendly.
 - Keep errors actionable.
-
 
 ## Release build command
 
@@ -161,3 +160,21 @@ Do not manually bypass `build.sh` for WebKitGTK tags. The script auto-detects We
 ## Automated release
 
 Tag pushes matching `v*` run `.github/workflows/release.yml`, which builds Linux assets on Ubuntu and Windows GUI/CLI assets on Windows, then uploads them to the GitHub release.
+
+## Child DOX Index
+
+- `.github/AGENTS.md` — GitHub workflows and repository templates
+- `build/AGENTS.md` — build assets and build-time notes
+- `docs/AGENTS.md` — user and developer documentation
+- `frontend/AGENTS.md` — GUI source and configuration
+- `internal/AGENTS.md` — shared Go implementation
+  - `internal/appsvc/AGENTS.md` — shared orchestration service
+  - `internal/cli/AGENTS.md` — headless command parser and runner
+  - `internal/config/AGENTS.md` — settings persistence and defaults
+  - `internal/exporter/AGENTS.md` — export planning and writers
+  - `internal/gdrive/AGENTS.md` — Google Drive auth and upload service
+  - `internal/scheduler/AGENTS.md` — OS scheduler abstraction and backends
+  - `internal/simkl/AGENTS.md` — Simkl API client and PIN auth
+  - `internal/tui/AGENTS.md` — dependency-free terminal UI
+- `packaging/AGENTS.md` — Linux packaging assets and distro metadata
+- `scripts/AGENTS.md` — repository bootstrap and setup scripts
