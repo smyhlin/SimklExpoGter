@@ -14,7 +14,7 @@ export type OutputFormat = "csv" | "json" | "both";
 export type FieldMode = "compact" | "all";
 export type Grouping = "single-file" | "separate-files";
 export type ScheduleFrequency = "daily" | "weekly";
-export type BackupStorageKind = "local" | "gdrive";
+export type BackupStorageKind = "local" | "gdrive" | "telegram";
 
 export interface AppSettings {
   clientId: string;
@@ -29,6 +29,10 @@ export interface AppSettings {
   hasGoogleDriveToken: boolean;
   googleDriveFolderName: string;
   googleDriveFolderUrl: string;
+  telegramChatId: string;
+  telegramThreadId: string;
+  telegramCaption: string;
+  hasTelegramBotToken: boolean;
 }
 
 export interface DeviceAuthSession {
@@ -139,6 +143,10 @@ export interface SaveSettingsInput {
   googleDriveClientId: string;
   googleDriveClientSecret: string;
   googleDriveFolderName: string;
+  telegramBotToken: string;
+  telegramChatId: string;
+  telegramThreadId: string;
+  telegramCaption: string;
 }
 
 export interface SaveScheduleInput {

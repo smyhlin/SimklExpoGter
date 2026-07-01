@@ -51,6 +51,14 @@ export interface AppStoreState {
   savedGoogleDriveFolderName: string;
   googleDriveFolderName: string;
   googleDriveFolderUrl: string;
+  telegramBotToken: string;
+  telegramChatId: string;
+  savedTelegramChatId: string;
+  telegramThreadId: string;
+  savedTelegramThreadId: string;
+  telegramCaption: string;
+  savedTelegramCaption: string;
+  hasTelegramBotToken: boolean;
   pendingAuth: DeviceAuthSession | null;
   pendingGoogleDriveAuth: GoogleDriveAuthSession | null;
   oauthPending: boolean;
@@ -115,6 +123,14 @@ const initialState: AppStoreState = {
   savedGoogleDriveFolderName: defaultGoogleDriveFolderName,
   googleDriveFolderName: defaultGoogleDriveFolderName,
   googleDriveFolderUrl: "",
+  telegramBotToken: "",
+  telegramChatId: "",
+  savedTelegramChatId: "",
+  telegramThreadId: "",
+  savedTelegramThreadId: "",
+  telegramCaption: "SimklExpoGter backup",
+  savedTelegramCaption: "SimklExpoGter backup",
+  hasTelegramBotToken: false,
   pendingAuth: null,
   pendingGoogleDriveAuth: null,
   oauthPending: false,
@@ -160,14 +176,22 @@ const initialState: AppStoreState = {
 function resolveBackupDestinationLabel(
   state: Pick<
     AppStoreState,
-    "backupStorage" | "exportDirectory" | "googleDriveFolderName" | "googleDriveFolderUrl"
+    | "backupStorage"
+    | "exportDirectory"
+    | "googleDriveFolderName"
+    | "googleDriveFolderUrl"
+    | "telegramChatId"
   >,
 ) {
-  return state.backupStorage === "gdrive"
-    ? `Google Drive / ${
-        state.googleDriveFolderName || defaultGoogleDriveFolderName
-      }`
-    : state.exportDirectory.trim() || "Choose a folder";
+  if (state.backupStorage === "gdrive") {
+    return `Google Drive / ${
+      state.googleDriveFolderName || defaultGoogleDriveFolderName
+    }`;
+  }
+  if (state.backupStorage === "telegram") {
+    return `Telegram chat ${state.telegramChatId || "not configured"}`;
+  }
+  return state.exportDirectory.trim() || "Choose a folder";
 }
 
 let devicePollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -241,6 +265,14 @@ function mapAppState(state: AppState): Partial<AppStoreState> {
       (state.settings.googleDriveFolderName || defaultGoogleDriveFolderName)
         .trim() || defaultGoogleDriveFolderName,
     googleDriveFolderUrl: state.settings.googleDriveFolderUrl || "",
+    telegramBotToken: "",
+    telegramChatId: state.settings.telegramChatId || "",
+    savedTelegramChatId: state.settings.telegramChatId || "",
+    telegramThreadId: state.settings.telegramThreadId || "",
+    savedTelegramThreadId: state.settings.telegramThreadId || "",
+    telegramCaption: state.settings.telegramCaption || "SimklExpoGter backup",
+    savedTelegramCaption: state.settings.telegramCaption || "SimklExpoGter backup",
+    hasTelegramBotToken: Boolean(state.settings.hasTelegramBotToken),
     backupDestinationLabel: resolveBackupDestinationLabel({
       backupStorage: state.settings.backupStorage ?? "local",
       exportDirectory:
@@ -249,6 +281,7 @@ function mapAppState(state: AppState): Partial<AppStoreState> {
         (state.settings.googleDriveFolderName || defaultGoogleDriveFolderName)
           .trim() || defaultGoogleDriveFolderName,
       googleDriveFolderUrl: state.settings.googleDriveFolderUrl || "",
+      telegramChatId: state.settings.telegramChatId || "",
     }),
     pendingAuth: state.pendingAuth ?? null,
     pendingGoogleDriveAuth: state.pendingGoogleDriveAuth ?? null,
@@ -521,6 +554,10 @@ function createAppStore() {
         googleDriveClientId: current.googleDriveClientId.trim(),
         googleDriveClientSecret: current.googleDriveClientSecret.trim(),
         googleDriveFolderName: current.googleDriveFolderName.trim(),
+        telegramBotToken: current.telegramBotToken.trim(),
+        telegramChatId: current.telegramChatId.trim(),
+        telegramThreadId: current.telegramThreadId.trim(),
+        telegramCaption: current.telegramCaption.trim(),
       });
       applyAppState(next);
       patchState({ authMessage: "Settings saved." });

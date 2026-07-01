@@ -52,6 +52,11 @@
             ? "Google Drive ready"
             : "Drive setup required";
         }
+        if (state.backupStorage === "telegram") {
+          return state.hasTelegramBotToken && state.telegramChatId.trim()
+            ? "Telegram ready"
+            : "Telegram setup required";
+        }
 
         return state.exportDirectory.trim() ? "Local folder ready" : "Folder required";
       }

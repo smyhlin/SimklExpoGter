@@ -175,6 +175,7 @@ Tag pushes matching `v*` run `.github/workflows/release.yml`, which builds Linux
   - `internal/gdrive/AGENTS.md` — Google Drive auth and upload service
   - `internal/scheduler/AGENTS.md` — OS scheduler abstraction and backends
   - `internal/simkl/AGENTS.md` — Simkl API client and PIN auth
+  - `internal/telegram/AGENTS.md` — Telegram Bot API backup upload service
   - `internal/tui/AGENTS.md` — dependency-free terminal UI
 - `packaging/AGENTS.md` — Linux packaging assets and distro metadata
 - `scripts/AGENTS.md` — repository bootstrap and setup scripts

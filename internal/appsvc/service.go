@@ -17,6 +17,7 @@ import (
 	"SimklExpoGter/internal/gdrive"
 	"SimklExpoGter/internal/scheduler"
 	"SimklExpoGter/internal/simkl"
+	"SimklExpoGter/internal/telegram"
 )
 
 const (
@@ -40,6 +41,7 @@ type Service struct {
 	client         *simkl.Client
 	exporter       *exporter.Service
 	drive          backupUploader
+	telegram       telegramUploader
 	scheduler      scheduler.Manager
 	executablePath string
 }
@@ -50,6 +52,10 @@ type backupUploader interface {
 	UploadFiles(context.Context, config.GoogleDriveSettings, []string) (gdrive.UploadResult, error)
 }
 
+type telegramUploader interface {
+	UploadFiles(context.Context, config.TelegramBotSettings, []string) (telegram.UploadResult, error)
+}
+
 type SaveSettingsInput struct {
 	ClientID                   string
 	ClientSecret               string
@@ -58,6 +64,10 @@ type SaveSettingsInput struct {
 	GoogleDriveClientID        string
 	GoogleDriveClientSecret    string
 	GoogleDriveFolderName      string
+	TelegramBotToken           string
+	TelegramChatID             string
+	TelegramThreadID           string
+	TelegramCaption            string
 	SetClientID                bool
 	SetClientSecret            bool
 	SetExportDirectory         bool
@@ -65,6 +75,10 @@ type SaveSettingsInput struct {
 	SetGoogleDriveClientID     bool
 	SetGoogleDriveClientSecret bool
 	SetGoogleDriveFolderName   bool
+	SetTelegramBotToken        bool
+	SetTelegramChatID          bool
+	SetTelegramThreadID        bool
+	SetTelegramCaption         bool
 }
 
 type SaveSettingsResult struct {
@@ -85,6 +99,10 @@ type ConfigSummary struct {
 	HasGoogleDriveToken        bool   `json:"hasGoogleDriveToken"`
 	GoogleDriveFolderName      string `json:"googleDriveFolderName"`
 	GoogleDriveFolderURL       string `json:"googleDriveFolderUrl"`
+	TelegramChatID             string `json:"telegramChatId"`
+	TelegramThreadID           string `json:"telegramThreadId"`
+	TelegramCaption            string `json:"telegramCaption"`
+	HasTelegramBotToken        bool   `json:"hasTelegramBotToken"`
 	UpdatedAt                  string `json:"updatedAt,omitempty"`
 }
 
@@ -182,11 +200,12 @@ func New(appName string) (*Service, error) {
 		return nil, err
 	}
 
-	return NewWithDepsAndSchedulerAndDrive(
+	return newWithDepsAndSchedulersAndUploaders(
 		store,
 		simkl.NewClient(),
 		exporter.NewService(),
 		gdrive.NewService(),
+		telegram.NewService(),
 		scheduler.NewManager(),
 		executablePath,
 	), nil
@@ -208,6 +227,18 @@ func NewWithDepsAndSchedulerAndDrive(
 	schedulerManager scheduler.Manager,
 	executablePath string,
 ) *Service {
+	return newWithDepsAndSchedulersAndUploaders(store, client, exporterService, driveService, nil, schedulerManager, executablePath)
+}
+
+func newWithDepsAndSchedulersAndUploaders(
+	store *config.Store,
+	client *simkl.Client,
+	exporterService *exporter.Service,
+	driveService backupUploader,
+	telegramService telegramUploader,
+	schedulerManager scheduler.Manager,
+	executablePath string,
+) *Service {
 	if store == nil {
 		store = config.NewStoreAtPath(filepath.Join(".", "settings.json"))
 	}
@@ -220,6 +251,9 @@ func NewWithDepsAndSchedulerAndDrive(
 	if driveService == nil {
 		driveService = gdrive.NewService()
 	}
+	if telegramService == nil {
+		telegramService = telegram.NewService()
+	}
 	if schedulerManager == nil {
 		schedulerManager = scheduler.NewManager()
 	}
@@ -229,6 +263,7 @@ func NewWithDepsAndSchedulerAndDrive(
 		client:         client,
 		exporter:       exporterService,
 		drive:          driveService,
+		telegram:       telegramService,
 		scheduler:      schedulerManager,
 		executablePath: executablePath,
 	}
@@ -301,6 +336,22 @@ func (s *Service) SaveSettings(input SaveSettingsInput) (SaveSettingsResult, err
 			settings.Backup.GoogleDrive.FolderURL = ""
 		}
 		settings.Backup.GoogleDrive.FolderName = folderName
+	}
+
+	if input.SetTelegramBotToken {
+		botToken := strings.TrimSpace(input.TelegramBotToken)
+		if botToken != "" {
+			settings.Backup.Telegram.BotToken = botToken
+		}
+	}
+	if input.SetTelegramChatID {
+		settings.Backup.Telegram.ChatID = strings.TrimSpace(input.TelegramChatID)
+	}
+	if input.SetTelegramThreadID {
+		settings.Backup.Telegram.ThreadID = strings.TrimSpace(input.TelegramThreadID)
+	}
+	if input.SetTelegramCaption {
+		settings.Backup.Telegram.Caption = strings.TrimSpace(input.TelegramCaption)
 	}
 
 	if err := s.store.Save(settings); err != nil {
@@ -542,6 +593,10 @@ func (s *Service) ConfigSummary() (ConfigSummary, error) {
 		HasGoogleDriveToken:        hasGoogleDriveToken(settings.Backup.GoogleDrive),
 		GoogleDriveFolderName:      googleDriveFolderName(settings.Backup.GoogleDrive),
 		GoogleDriveFolderURL:       settings.Backup.GoogleDrive.FolderURL,
+		TelegramChatID:             settings.Backup.Telegram.ChatID,
+		TelegramThreadID:           settings.Backup.Telegram.ThreadID,
+		TelegramCaption:            telegramCaption(settings.Backup.Telegram),
+		HasTelegramBotToken:        strings.TrimSpace(settings.Backup.Telegram.BotToken) != "",
 		UpdatedAt:                  updatedAt,
 	}, nil
 }
@@ -601,6 +656,9 @@ func (s *Service) SaveSchedule(input ScheduleSettingsInput) (config.Settings, Sc
 		}
 		if settings.Backup.StorageKind == config.BackupStorageGDrive && !googleDriveUploadReady(settings.Backup.GoogleDrive) {
 			return config.Settings{}, ScheduleState{}, newPrerequisiteError("connect Google Drive before enabling recurring backups that upload to Google Drive")
+		}
+		if settings.Backup.StorageKind == config.BackupStorageTelegram && !telegramUploadReady(settings.Backup.Telegram) {
+			return config.Settings{}, ScheduleState{}, newPrerequisiteError("configure Telegram before enabling recurring backups that upload to Telegram")
 		}
 
 		if _, err := s.scheduler.Sync(s.buildSchedulerConfig(normalized)); err != nil {
@@ -694,17 +752,22 @@ func (s *Service) RunExport(request exporter.Request) (exporter.Result, error) {
 	}
 
 	useGoogleDrive := shouldUseGoogleDriveOutput(settings, request.ExportDirectory)
+	useTelegram := shouldUseTelegramOutput(settings, request.ExportDirectory)
+	useRemoteStorage := useGoogleDrive || useTelegram
 	if useGoogleDrive && !googleDriveUploadReady(settings.Backup.GoogleDrive) {
 		return exporter.Result{}, newPrerequisiteError("connect Google Drive before running backups that use Google Drive storage")
 	}
+	if useTelegram && !telegramUploadReady(settings.Backup.Telegram) {
+		return exporter.Result{}, newPrerequisiteError("configure Telegram before running backups that use Telegram storage")
+	}
 
-	request, err = normalizeRequest(request, settings, !useGoogleDrive)
+	request, err = normalizeRequest(request, settings, !useRemoteStorage)
 	if err != nil {
 		return exporter.Result{}, err
 	}
 
-	if useGoogleDrive {
-		request.ExportDirectory, err = os.MkdirTemp("", "simklexpogter-gdrive-*")
+	if useRemoteStorage {
+		request.ExportDirectory, err = os.MkdirTemp("", "simklexpogter-backup-*")
 		if err != nil {
 			return exporter.Result{}, err
 		}
@@ -793,6 +856,18 @@ func (s *Service) RunExport(request exporter.Request) (exporter.Result, error) {
 		settingsChanged = true
 
 		result = applyGoogleDriveUploadResult(result, uploadResult)
+	}
+	if useTelegram {
+		if s.telegram == nil {
+			return exporter.Result{}, errors.New("telegram backup is not available")
+		}
+
+		uploadResult, err := s.telegram.UploadFiles(context.Background(), settings.Backup.Telegram, exportedFilePaths(result.Files))
+		if err != nil {
+			return exporter.Result{}, err
+		}
+
+		result = applyTelegramUploadResult(result, uploadResult)
 	}
 
 	exportedAt := parseExportedAtOrNow(result.ExportedAt)
@@ -1078,6 +1153,23 @@ func applyGoogleDriveUploadResult(result exporter.Result, uploadResult gdrive.Up
 	return result
 }
 
+func applyTelegramUploadResult(result exporter.Result, uploadResult telegram.UploadResult) exporter.Result {
+	destinationLabel := "Telegram chat " + uploadResult.ChatID
+	result.StorageKind = config.BackupStorageTelegram
+	result.OutputDirectory = destinationLabel
+	result.DestinationLabel = destinationLabel
+	result.DestinationURL = ""
+
+	for index := range result.Files {
+		result.Files[index].StorageKind = config.BackupStorageTelegram
+		if index < len(uploadResult.Files) {
+			result.Files[index].Path = destinationLabel + " / " + firstNonEmpty(uploadResult.Files[index].Name, result.Files[index].Path)
+		}
+	}
+
+	return result
+}
+
 func normalizeBackupStorage(value string) (string, error) {
 	normalized := strings.ToLower(strings.TrimSpace(value))
 	switch normalized {
@@ -1085,6 +1177,8 @@ func normalizeBackupStorage(value string) (string, error) {
 		return config.BackupStorageLocal, nil
 	case config.BackupStorageGDrive, "google-drive", "google_drive":
 		return config.BackupStorageGDrive, nil
+	case config.BackupStorageTelegram, "telegram-bot", "telegram_bot":
+		return config.BackupStorageTelegram, nil
 	default:
 		return "", newUsageError(fmt.Sprintf("unsupported backup storage %q", value))
 	}
@@ -1102,8 +1196,16 @@ func shouldUseGoogleDriveStorage(settings config.Settings) bool {
 	return backupStorageOrDefault(settings.Backup.StorageKind) == config.BackupStorageGDrive
 }
 
+func shouldUseTelegramStorage(settings config.Settings) bool {
+	return backupStorageOrDefault(settings.Backup.StorageKind) == config.BackupStorageTelegram
+}
+
 func shouldUseGoogleDriveOutput(settings config.Settings, requestedOutput string) bool {
 	return shouldUseGoogleDriveStorage(settings) && strings.TrimSpace(requestedOutput) == ""
+}
+
+func shouldUseTelegramOutput(settings config.Settings, requestedOutput string) bool {
+	return shouldUseTelegramStorage(settings) && strings.TrimSpace(requestedOutput) == ""
 }
 
 func clearGoogleDriveConnection(settings *config.GoogleDriveSettings) {
@@ -1129,9 +1231,20 @@ func googleDriveFolderName(settings config.GoogleDriveSettings) string {
 	return firstNonEmpty(settings.FolderName, gdrive.DefaultFolderName)
 }
 
+func telegramUploadReady(settings config.TelegramBotSettings) bool {
+	return strings.TrimSpace(settings.BotToken) != "" && strings.TrimSpace(settings.ChatID) != ""
+}
+
+func telegramCaption(settings config.TelegramBotSettings) string {
+	return firstNonEmpty(settings.Caption, telegram.DefaultCaption)
+}
+
 func backupDestinationPreview(settings config.Settings) string {
 	if shouldUseGoogleDriveStorage(settings) {
 		return firstNonEmpty(settings.Backup.GoogleDrive.FolderURL, "Google Drive / "+googleDriveFolderName(settings.Backup.GoogleDrive))
+	}
+	if shouldUseTelegramStorage(settings) {
+		return "Telegram chat " + firstNonEmpty(strings.TrimSpace(settings.Backup.Telegram.ChatID), "not configured")
 	}
 	return firstNonEmpty(strings.TrimSpace(settings.ExportDirectory), DefaultExportDirectory())
 }

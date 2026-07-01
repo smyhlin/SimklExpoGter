@@ -22,7 +22,7 @@ GUI, TUI and CLI modes share the same settings file, export directory, auth toke
 - Use `single-file` or `separate-files` grouping
 - Include episode files, memos, next-watch info and watched-at timestamps
 - Use activity-aware incremental exports through `/sync/activities`
-- Upload generated backups to Google Drive
+- Upload generated backups to Google Drive or Telegram through a bot
 - Configure recurring daily or weekly backups
 - Build for Windows and Linux with included `.bat`, `.ps1` and `.sh` scripts
 
@@ -329,11 +329,20 @@ Persist config values:
 SimklExpoGter config set --client-id "your-client-id" --secret "your-client-secret" --output "./exports"
 ```
 
+Configure Telegram bot uploads:
+
+```bash
+SimklExpoGter config set --backup-storage telegram --telegram-bot-token "123456:ABC" --telegram-chat-id "-1001234567890"
+```
+
+For Telegram uploads, add the bot to the target chat/channel first. For channels, make the bot an admin. Optional forum topic routing uses `--telegram-thread-id`.
+
 Notes:
 
 - `--secret` is an alias for `--client-secret`
 - `config set` supports partial updates
 - `--output` persists the default export directory for GUI, TUI and CLI use
+- `--backup-storage` accepts `local`, `gdrive`, or `telegram`
 
 ### Auth Commands
 
@@ -431,7 +440,7 @@ What recurring backups support:
 - field mode: `all` or `compact`
 - selected media content types
 - optional activity check before export
-- local export or Google Drive upload based on saved backup storage settings
+- local export, Google Drive upload, or Telegram bot upload based on saved backup storage settings
 
 How it behaves:
 
@@ -507,6 +516,7 @@ Persistence rules:
 - `internal/simkl`: Simkl API client
 - `internal/exporter`: export planning and writers
 - `internal/gdrive`: Google Drive OAuth and upload service
+- `internal/telegram`: Telegram Bot API document upload service
 - `frontend`: Svelte 5 + TypeScript desktop UI
 - `scripts`: bootstrap helpers
 - `packaging`: Linux desktop, AppImage, Debian and Arch packaging files

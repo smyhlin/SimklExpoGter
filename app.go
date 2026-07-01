@@ -55,6 +55,10 @@ type SettingsState struct {
 	HasGoogleDriveToken        bool   `json:"hasGoogleDriveToken"`
 	GoogleDriveFolderName      string `json:"googleDriveFolderName"`
 	GoogleDriveFolderURL       string `json:"googleDriveFolderUrl"`
+	TelegramChatID             string `json:"telegramChatId"`
+	TelegramThreadID           string `json:"telegramThreadId"`
+	TelegramCaption            string `json:"telegramCaption"`
+	HasTelegramBotToken        bool   `json:"hasTelegramBotToken"`
 }
 
 type SaveSettingsInput struct {
@@ -65,6 +69,10 @@ type SaveSettingsInput struct {
 	GoogleDriveClientID     string `json:"googleDriveClientId"`
 	GoogleDriveClientSecret string `json:"googleDriveClientSecret"`
 	GoogleDriveFolderName   string `json:"googleDriveFolderName"`
+	TelegramBotToken        string `json:"telegramBotToken"`
+	TelegramChatID          string `json:"telegramChatId"`
+	TelegramThreadID        string `json:"telegramThreadId"`
+	TelegramCaption         string `json:"telegramCaption"`
 }
 
 type SaveScheduleInput struct {
@@ -182,6 +190,10 @@ func (a *App) SaveSettings(input SaveSettingsInput) (AppState, error) {
 		GoogleDriveClientID:        input.GoogleDriveClientID,
 		GoogleDriveClientSecret:    input.GoogleDriveClientSecret,
 		GoogleDriveFolderName:      input.GoogleDriveFolderName,
+		TelegramBotToken:           input.TelegramBotToken,
+		TelegramChatID:             input.TelegramChatID,
+		TelegramThreadID:           input.TelegramThreadID,
+		TelegramCaption:            input.TelegramCaption,
 		SetClientID:                true,
 		SetClientSecret:            true,
 		SetExportDirectory:         true,
@@ -189,6 +201,10 @@ func (a *App) SaveSettings(input SaveSettingsInput) (AppState, error) {
 		SetGoogleDriveClientID:     true,
 		SetGoogleDriveClientSecret: true,
 		SetGoogleDriveFolderName:   true,
+		SetTelegramBotToken:        true,
+		SetTelegramChatID:          true,
+		SetTelegramThreadID:        true,
+		SetTelegramCaption:         true,
 	})
 	if err != nil {
 		return AppState{}, err
@@ -550,6 +566,10 @@ func (a *App) buildStateWithSchedule(settings config.Settings, scheduleState app
 			HasGoogleDriveToken:        strings.TrimSpace(settings.Backup.GoogleDrive.Token.RefreshToken) != "" || strings.TrimSpace(settings.Backup.GoogleDrive.Token.AccessToken) != "",
 			GoogleDriveFolderName:      googleDriveFolderName(settings.Backup.GoogleDrive),
 			GoogleDriveFolderURL:       settings.Backup.GoogleDrive.FolderURL,
+			TelegramChatID:             settings.Backup.Telegram.ChatID,
+			TelegramThreadID:           settings.Backup.Telegram.ThreadID,
+			TelegramCaption:            firstNonEmpty(settings.Backup.Telegram.Caption, "SimklExpoGter backup"),
+			HasTelegramBotToken:        strings.TrimSpace(settings.Backup.Telegram.BotToken) != "",
 		},
 		Schedule:               mapScheduleState(scheduleState),
 		LastActivities:         settings.LastActivities,

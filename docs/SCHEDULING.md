@@ -72,7 +72,7 @@ Before exporting, the app checks the last successful backup timestamp saved in `
 }
 ```
 
-If the last successful backup is newer than the configured threshold, the scheduled run exits successfully without creating duplicate files. If the backup is missing or older than the threshold, the backup runs and updates the timestamp only after a successful export/upload.
+If the last successful backup is newer than the configured threshold, the scheduled run exits successfully without creating duplicate files. If the backup is missing or older than the threshold, the backup runs and updates the timestamp only after a successful export/upload. Saved backup storage may be local, Google Drive, or Telegram.
 
 Supported threshold examples:
 

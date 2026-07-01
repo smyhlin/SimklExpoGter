@@ -51,6 +51,7 @@
   let activeSection: SettingsSectionId = "destination";
   let showClientSecret = false;
   let showGoogleDriveClientSecret = false;
+  let showTelegramBotToken = false;
   let showGoogleDriveGuide = false;
   let oauthCode = "";
   let activeBackupAction: BackupAction = null;
@@ -66,7 +67,9 @@
   $: backupDestinationLabel =
     state.backupStorage === "gdrive"
       ? `Google Drive / ${normalizedGoogleDriveFolderName}`
-      : state.exportDirectory.trim() || "Choose a folder";
+      : state.backupStorage === "telegram"
+        ? `Telegram chat ${state.telegramChatId.trim() || "not configured"}`
+        : state.exportDirectory.trim() || "Choose a folder";
   $: simklSecretLabel = state.hasClientSecret
     ? "Secret stored"
     : "Secret missing";
@@ -84,6 +87,12 @@
     state.googleDriveClientId.trim() !== state.savedGoogleDriveClientId ||
     Boolean(state.googleDriveClientSecret.trim()) ||
     normalizedGoogleDriveFolderName !== state.savedGoogleDriveFolderName;
+  $: telegramSettingsDirty =
+    state.backupStorage !== state.savedBackupStorage ||
+    Boolean(state.telegramBotToken.trim()) ||
+    state.telegramChatId.trim() !== state.savedTelegramChatId ||
+    state.telegramThreadId.trim() !== state.savedTelegramThreadId ||
+    state.telegramCaption.trim() !== state.savedTelegramCaption;
   $: hasTypedClientSecret = Boolean(state.clientSecret.trim());
   $: showClientSecretToggle = hasTypedClientSecret || state.hasClientSecret;
   $: clientSecretInputType =
@@ -97,6 +106,10 @@
     showGoogleDriveClientSecret && hasTypedGoogleDriveClientSecret
       ? "text"
       : "password";
+  $: hasTypedTelegramBotToken = Boolean(state.telegramBotToken.trim());
+  $: telegramBotTokenInputType = showTelegramBotToken && hasTypedTelegramBotToken
+    ? "text"
+    : "password";
   $: hasGoogleDriveCredentials =
     Boolean(state.googleDriveClientId.trim()) &&
     (state.hasGoogleDriveClientSecret ||
@@ -121,6 +134,12 @@
       : state.hasGoogleDriveToken
         ? "Connected"
         : "Not connected";
+  $: telegramStatus =
+    state.backupStorage !== "telegram"
+      ? "Not selected"
+      : state.hasTelegramBotToken && state.telegramChatId.trim()
+        ? "Configured"
+        : "Incomplete";
   $: scheduleDaysLabel =
     state.scheduleFrequency !== "weekly"
       ? "Every day"
@@ -140,7 +159,7 @@
     {
       id: "destination",
       label: "Destination",
-      description: "Backup location, Drive credentials, and browser approval.",
+      description: "Backup location, Drive credentials, Telegram bot settings, and browser approval.",
       status:
         state.backupStorage === "gdrive"
           ? state.pendingGoogleDriveAuth
@@ -148,9 +167,13 @@
             : state.hasGoogleDriveToken
               ? "Drive connected"
               : "Drive setup required"
-          : state.exportDirectory.trim()
-            ? "Local folder ready"
-            : "Folder required",
+          : state.backupStorage === "telegram"
+            ? state.hasTelegramBotToken && state.telegramChatId.trim()
+              ? "Telegram ready"
+              : "Telegram setup required"
+            : state.exportDirectory.trim()
+              ? "Local folder ready"
+              : "Folder required",
     },
     {
       id: "automation",
@@ -219,7 +242,9 @@
               value:
                 state.backupStorage === "gdrive"
                   ? "Google Drive"
-                  : "Local folder",
+                  : state.backupStorage === "telegram"
+                    ? "Telegram"
+                    : "Local folder",
             },
             {
               label: "Destination",
@@ -235,18 +260,31 @@
                     : "Connect in browser"
                   : "Inactive",
             },
-            { label: "Folder", value: normalizedGoogleDriveFolderName },
+            {
+              label: "Remote",
+              value:
+                state.backupStorage === "gdrive"
+                  ? normalizedGoogleDriveFolderName
+                  : state.backupStorage === "telegram"
+                    ? telegramStatus
+                    : "Inactive",
+            },
           ] satisfies SummaryRow[];
   $: currentSetupRows = [
     { label: "Config file path", value: state.configPath || "Not saved yet" },
     {
       label: "Backup storage",
       value:
-        state.backupStorage === "gdrive" ? "Google Drive" : "Local folder",
+        state.backupStorage === "gdrive"
+          ? "Google Drive"
+          : state.backupStorage === "telegram"
+            ? "Telegram"
+            : "Local folder",
     },
     { label: "Destination", value: backupDestinationLabel },
     { label: "Simkl", value: state.isAuthorized ? "Connected" : "Not connected" },
     { label: "Google Drive", value: driveStatus },
+    { label: "Telegram", value: telegramStatus },
   ];
   $: exportInputType = showExportPassword ? "text" : "password";
   $: importInputType = showImportPassword ? "text" : "password";
@@ -443,7 +481,7 @@
                 <h3 class="settings-block__title">Storage mode</h3>
                 <p class="settings-block__copy">
                   Choose whether backups are written to a local folder or sent
-                  to Google Drive.
+                  to Google Drive or Telegram.
                 </p>
               </div>
             </div>
@@ -472,6 +510,18 @@
                 }}
               >
                 Google Drive
+              </button>
+              <button
+                aria-checked={state.backupStorage === "telegram"}
+                class="storage-switch__button"
+                class:storage-switch__button--active={state.backupStorage === "telegram"}
+                role="radio"
+                type="button"
+                onclick={() => {
+                  patchState({ backupStorage: "telegram" });
+                }}
+              >
+                Telegram
               </button>
             </div>
           </section>
@@ -532,7 +582,7 @@
                 </div>
               </dl>
             </section>
-          {:else}
+          {:else if state.backupStorage === "gdrive"}
             <section class="settings-block">
               <div class="settings-block__header">
                 <div>
@@ -802,6 +852,104 @@
                   Connecting in the browser finishes the approval flow and
                   creates the Drive folder immediately.
                 </div>
+              </div>
+            </section>
+          {:else if state.backupStorage === "telegram"}
+            <section class="settings-block">
+              <div class="settings-block__header">
+                <div>
+                  <h3 class="settings-block__title">Telegram bot destination</h3>
+                  <p class="settings-block__copy">
+                    Send generated backup files to a Telegram chat, group, channel, or forum topic through a bot.
+                  </p>
+                </div>
+              </div>
+
+              <div class="pane-form-grid pane-form-grid--two">
+                <label class="field">
+                  <span>Bot token</span>
+                  <div class="input-with-action">
+                    <input
+                      placeholder={state.hasTelegramBotToken
+                        ? "Token already stored"
+                        : "123456:ABC-DEF..."}
+                      type={telegramBotTokenInputType}
+                      value={state.telegramBotToken}
+                      oninput={(event) => {
+                        patchState({ telegramBotToken: textValue(event) });
+                      }}
+                    />
+                    <button
+                      class="button button--ghost"
+                      disabled={!hasTypedTelegramBotToken}
+                      type="button"
+                      onclick={() => {
+                        showTelegramBotToken = !showTelegramBotToken;
+                      }}
+                    >
+                      {showTelegramBotToken ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  <small>Leave blank to keep the saved token.</small>
+                </label>
+
+                <label class="field">
+                  <span>Chat ID</span>
+                  <input
+                    placeholder="-1001234567890"
+                    value={state.telegramChatId}
+                    oninput={(event) => {
+                      patchState({ telegramChatId: textValue(event) });
+                    }}
+                  />
+                  <small>Add the bot to the target chat or channel first.</small>
+                </label>
+
+                <label class="field">
+                  <span>Thread ID</span>
+                  <input
+                    placeholder="Optional forum topic ID"
+                    value={state.telegramThreadId}
+                    oninput={(event) => {
+                      patchState({ telegramThreadId: textValue(event) });
+                    }}
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Caption</span>
+                  <input
+                    placeholder="SimklExpoGter backup"
+                    value={state.telegramCaption}
+                    oninput={(event) => {
+                      patchState({ telegramCaption: textValue(event) });
+                    }}
+                  />
+                </label>
+              </div>
+
+              <dl class="settings-data-list">
+                <div class="settings-data-list__row">
+                  <dt>Status</dt>
+                  <dd>{telegramStatus}</dd>
+                </div>
+                <div class="settings-data-list__row">
+                  <dt>Target</dt>
+                  <dd class="settings-mono">{backupDestinationLabel}</dd>
+                </div>
+              </dl>
+
+              <div class="pane-toolbar">
+                {#if telegramSettingsDirty}
+                  <button
+                    class="button button--primary"
+                    disabled={state.isSaving}
+                    type="button"
+                    onclick={() => void appStore.saveSettings()}
+                  >
+                    Save Telegram settings
+                  </button>
+                {/if}
               </div>
             </section>
           {/if}

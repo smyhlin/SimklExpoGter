@@ -14,12 +14,15 @@
     selectedGrouping === "single-file"
       ? "Combine into single file"
       : "Separate files";
+  $: usesRemoteStorage = state.backupStorage === "gdrive" || state.backupStorage === "telegram";
   $: canExport = Boolean(
     state.isAuthorized &&
       !isExporting &&
       (state.backupStorage === "gdrive"
         ? state.hasGoogleDriveToken
-        : state.exportDirectory.trim()),
+        : state.backupStorage === "telegram"
+          ? state.hasTelegramBotToken && state.telegramChatId.trim()
+          : state.exportDirectory.trim()),
   );
 
   function buildRequest(): ExportRequest {
@@ -36,8 +39,7 @@
       grouping: selectedGrouping,
       includeEpisodeFiles: true,
       useActivityCheck: false,
-      exportDirectory:
-        state.backupStorage === "gdrive" ? "" : state.exportDirectory.trim(),
+      exportDirectory: usesRemoteStorage ? "" : state.exportDirectory.trim(),
       filenamePrefix: "simkl-full-backup",
     };
   }
@@ -56,8 +58,12 @@
       statusMessage = "Connect Google Drive in Settings before running the backup.";
       return;
     }
+    if (state.backupStorage === "telegram" && (!state.hasTelegramBotToken || !state.telegramChatId.trim())) {
+      statusMessage = "Configure Telegram in Settings before running the backup.";
+      return;
+    }
 
-    if (state.backupStorage !== "gdrive" && !state.exportDirectory.trim()) {
+    if (!usesRemoteStorage && !state.exportDirectory.trim()) {
       statusMessage = "Choose an export directory first.";
       return;
     }
@@ -96,8 +102,8 @@
       </div>
 
       <label class="field">
-        <span>{state.backupStorage === "gdrive" ? "Backup destination" : "Export directory"}</span>
-        {#if state.backupStorage !== "gdrive"}
+        <span>{usesRemoteStorage ? "Backup destination" : "Export directory"}</span>
+        {#if !usesRemoteStorage}
           <div class="input-with-action">
             <input
               placeholder="Choose a folder to store the backup"
@@ -115,8 +121,8 @@
           <div class="value-box value-box--path">{state.backupDestinationLabel}</div>
         {/if}
         <small>
-          {state.backupStorage === "gdrive"
-            ? "The export is staged locally, then uploaded into a dated subfolder inside the saved Google Drive folder."
+          {usesRemoteStorage
+            ? "The export is staged locally, then uploaded to the configured remote backup destination."
             : "This directory is shared with the Settings and Advanced export tabs."}
         </small>
       </label>
@@ -161,7 +167,7 @@
         </button>
       </div>
 
-      {#if state.backupStorage !== "gdrive" && !state.exportDirectory.trim()}
+      {#if !usesRemoteStorage && !state.exportDirectory.trim()}
         <div class="notice">Choose an export directory before starting the backup.</div>
       {/if}
 

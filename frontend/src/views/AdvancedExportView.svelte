@@ -57,6 +57,7 @@
   };
 
   $: state = $appStore;
+  $: usesRemoteStorage = state.backupStorage === "gdrive" || state.backupStorage === "telegram";
   $: summary = [
     { label: "Destination", value: state.backupDestinationLabel },
     {
@@ -127,8 +128,7 @@
       grouping: request.grouping,
       includeEpisodeFiles: request.includeEpisodeFiles,
       useActivityCheck: request.useActivityCheck,
-      exportDirectory:
-        state.backupStorage === "gdrive" ? "" : state.exportDirectory.trim(),
+      exportDirectory: usesRemoteStorage ? "" : state.exportDirectory.trim(),
       filenamePrefix: request.filenamePrefix,
     };
   }
@@ -148,8 +148,12 @@
         "Connect Google Drive in Settings before running the advanced export.";
       return;
     }
+    if (state.backupStorage === "telegram" && (!state.hasTelegramBotToken || !state.telegramChatId.trim())) {
+      message = "Configure Telegram in Settings before running the advanced export.";
+      return;
+    }
 
-    if (state.backupStorage !== "gdrive" && !state.exportDirectory.trim()) {
+    if (!usesRemoteStorage && !state.exportDirectory.trim()) {
       message = "Choose an export directory first.";
       return;
     }
@@ -335,8 +339,8 @@
       </div>
 
       <label class="field">
-        <span>{state.backupStorage === "gdrive" ? "Backup destination" : "Export directory"}</span>
-        {#if state.backupStorage !== "gdrive"}
+        <span>{usesRemoteStorage ? "Backup destination" : "Export directory"}</span>
+        {#if !usesRemoteStorage}
           <div class="input-with-action">
             <input
               placeholder="Choose a folder to store the export"
@@ -354,8 +358,8 @@
           <div class="value-box value-box--path">{state.backupDestinationLabel}</div>
         {/if}
         <small>
-          {state.backupStorage === "gdrive"
-            ? "This run uploads the generated files into the configured Google Drive folder."
+          {usesRemoteStorage
+            ? "This run uploads generated files to the configured remote backup destination."
             : "This path is shared with the quick backup tab and persisted in the config file."}
         </small>
       </label>

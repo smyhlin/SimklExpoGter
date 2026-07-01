@@ -81,6 +81,18 @@ func TestNormalizeRequestSkipsDefaultLocalDirectoryForGoogleDrive(t *testing.T) 
 	}
 }
 
+func TestNormalizeBackupStorageSupportsTelegramAliases(t *testing.T) {
+	for _, value := range []string{"telegram", "telegram-bot", "telegram_bot"} {
+		got, err := normalizeBackupStorage(value)
+		if err != nil {
+			t.Fatalf("normalizeBackupStorage(%q) returned error: %v", value, err)
+		}
+		if got != config.BackupStorageTelegram {
+			t.Fatalf("normalizeBackupStorage(%q) = %q, want %q", value, got, config.BackupStorageTelegram)
+		}
+	}
+}
+
 func TestRunExportRequiresClientID(t *testing.T) {
 	service := newTestService(t, config.Settings{})
 

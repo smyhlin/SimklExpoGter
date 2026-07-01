@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	BackupStorageLocal  = "local"
-	BackupStorageGDrive = "gdrive"
+	BackupStorageLocal    = "local"
+	BackupStorageGDrive   = "gdrive"
+	BackupStorageTelegram = "telegram"
 )
 
 type Settings struct {
@@ -27,8 +28,9 @@ type Settings struct {
 }
 
 type BackupSettings struct {
-	StorageKind string              `json:"storageKind,omitempty"`
-	GoogleDrive GoogleDriveSettings `json:"googleDrive,omitempty"`
+	StorageKind string               `json:"storageKind,omitempty"`
+	GoogleDrive GoogleDriveSettings  `json:"googleDrive,omitempty"`
+	Telegram    TelegramBotSettings  `json:"telegram,omitempty"`
 }
 
 type GoogleDriveSettings struct {
@@ -38,6 +40,13 @@ type GoogleDriveSettings struct {
 	FolderID     string     `json:"folderId,omitempty"`
 	FolderName   string     `json:"folderName,omitempty"`
 	FolderURL    string     `json:"folderUrl,omitempty"`
+}
+
+type TelegramBotSettings struct {
+	BotToken  string `json:"botToken,omitempty"`
+	ChatID    string `json:"chatId,omitempty"`
+	ThreadID  string `json:"threadId,omitempty"`
+	Caption   string `json:"caption,omitempty"`
 }
 
 type OAuthToken struct {

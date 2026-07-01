@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file.
 - Episode files, memos, next-watch info and episode watched-at timestamps.
 - Activity-aware incremental export support.
 - Google Drive backup upload support.
+- Telegram bot backup upload support.
 - Encrypted settings backup import/export.
 - Windows Task Scheduler recurring backup support.
 - Linux systemd user timer recurring backup support.

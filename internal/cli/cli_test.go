@@ -92,6 +92,40 @@ func TestConfigSetSupportsSecretAlias(t *testing.T) {
 	}
 }
 
+func TestConfigSetSupportsTelegramBackupStorage(t *testing.T) {
+	service := &stubService{}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{
+		"config", "set",
+		"--backup-storage", "telegram",
+		"--telegram-bot-token", "token-1",
+		"--telegram-chat-id", "-100123",
+		"--telegram-thread-id", "42",
+		"--telegram-caption", "daily backup",
+	}, &stdout, &stderr, service)
+	if code != ExitSuccess {
+		t.Fatalf("expected success, got %d (%s)", code, stderr.String())
+	}
+
+	if !service.savedInput.SetBackupStorage || service.savedInput.BackupStorage != "telegram" {
+		t.Fatalf("expected telegram backup storage to be saved: %+v", service.savedInput)
+	}
+	if !service.savedInput.SetTelegramBotToken || service.savedInput.TelegramBotToken != "token-1" {
+		t.Fatalf("expected telegram bot token to be saved: %+v", service.savedInput)
+	}
+	if !service.savedInput.SetTelegramChatID || service.savedInput.TelegramChatID != "-100123" {
+		t.Fatalf("expected telegram chat ID to be saved: %+v", service.savedInput)
+	}
+	if !service.savedInput.SetTelegramThreadID || service.savedInput.TelegramThreadID != "42" {
+		t.Fatalf("expected telegram thread ID to be saved: %+v", service.savedInput)
+	}
+	if !service.savedInput.SetTelegramCaption || service.savedInput.TelegramCaption != "daily backup" {
+		t.Fatalf("expected telegram caption to be saved: %+v", service.savedInput)
+	}
+}
+
 type stubService struct {
 	savedInput  appsvc.SaveSettingsInput
 	lastRequest exporter.Request

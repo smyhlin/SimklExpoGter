@@ -148,11 +148,21 @@ func runConfigSetCommand(args []string, stdout, stderr io.Writer, service Servic
 	var clientSecret string
 	var secretAlias string
 	var output string
+	var backupStorage string
+	var telegramBotToken string
+	var telegramChatID string
+	var telegramThreadID string
+	var telegramCaption string
 
 	fs.StringVar(&clientID, "client-id", "", "Persist the Simkl client ID.")
 	fs.StringVar(&clientSecret, "client-secret", "", "Persist the Simkl client secret.")
 	fs.StringVar(&secretAlias, "secret", "", "Alias for --client-secret.")
 	fs.StringVar(&output, "output", "", "Persist the default export directory.")
+	fs.StringVar(&backupStorage, "backup-storage", "", "Persist backup storage: local, gdrive, telegram.")
+	fs.StringVar(&telegramBotToken, "telegram-bot-token", "", "Persist Telegram bot token.")
+	fs.StringVar(&telegramChatID, "telegram-chat-id", "", "Persist Telegram chat ID.")
+	fs.StringVar(&telegramThreadID, "telegram-thread-id", "", "Persist Telegram forum topic/thread ID.")
+	fs.StringVar(&telegramCaption, "telegram-caption", "", "Persist Telegram backup caption.")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -174,13 +184,23 @@ func runConfigSetCommand(args []string, stdout, stderr io.Writer, service Servic
 	input := appsvc.SaveSettingsInput{
 		ClientID:           clientID,
 		ClientSecret:       resolvedSecret,
-		ExportDirectory:    output,
-		SetClientID:        visited["client-id"],
-		SetClientSecret:    visited["client-secret"] || visited["secret"],
-		SetExportDirectory: visited["output"],
+		ExportDirectory:     output,
+		BackupStorage:       backupStorage,
+		TelegramBotToken:    telegramBotToken,
+		TelegramChatID:      telegramChatID,
+		TelegramThreadID:    telegramThreadID,
+		TelegramCaption:     telegramCaption,
+		SetClientID:         visited["client-id"],
+		SetClientSecret:     visited["client-secret"] || visited["secret"],
+		SetExportDirectory:  visited["output"],
+		SetBackupStorage:    visited["backup-storage"],
+		SetTelegramBotToken: visited["telegram-bot-token"],
+		SetTelegramChatID:   visited["telegram-chat-id"],
+		SetTelegramThreadID: visited["telegram-thread-id"],
+		SetTelegramCaption:  visited["telegram-caption"],
 	}
 
-	if !input.SetClientID && !input.SetClientSecret && !input.SetExportDirectory {
+	if !input.SetClientID && !input.SetClientSecret && !input.SetExportDirectory && !input.SetBackupStorage && !input.SetTelegramBotToken && !input.SetTelegramChatID && !input.SetTelegramThreadID && !input.SetTelegramCaption {
 		return printError(stderr, newUsageError("config set requires at least one flag"))
 	}
 
@@ -730,11 +750,17 @@ func printConfigHelp(w io.Writer) {
 func printConfigSetHelp(w io.Writer) {
 	fmt.Fprintln(w, "Usage:")
 	fmt.Fprintln(w, "  SimklExpoGter config set --client-id <id> [--client-secret <secret>] [--output <dir>]")
+	fmt.Fprintln(w, "  SimklExpoGter config set --backup-storage telegram --telegram-bot-token <token> --telegram-chat-id <id>")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Flags:")
 	fmt.Fprintln(w, "  --client-id                  Persist the Simkl client ID")
 	fmt.Fprintln(w, "  --client-secret, --secret    Persist the Simkl client secret")
 	fmt.Fprintln(w, "  --output                     Persist the default export directory")
+	fmt.Fprintln(w, "  --backup-storage             Persist backup storage: local, gdrive, telegram")
+	fmt.Fprintln(w, "  --telegram-bot-token         Persist Telegram bot token")
+	fmt.Fprintln(w, "  --telegram-chat-id           Persist Telegram chat ID")
+	fmt.Fprintln(w, "  --telegram-thread-id         Persist Telegram forum topic/thread ID")
+	fmt.Fprintln(w, "  --telegram-caption           Persist Telegram backup caption")
 }
 
 func printAuthHelp(w io.Writer) {
